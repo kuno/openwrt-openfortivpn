@@ -1,0 +1,41 @@
+name: build OpenWrt package
+
+on:
+  push:
+    paths:
+      - 'Makefile'
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          ref: master
+
+      - name: Initialize Environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk
+          sudo docker image prune -a -f
+          sudo apt-get -y install gcc automake autoconf libssl-dev make pkg-config
+          sudo apt-get -y purge dotnet* ghc* google* llvm* mysql* php* zulu* firefox hhvm
+          sudo apt-get -y autoremove --purge
+
+      - name: Build OpenFortiVPN
+        run: |
+          wget https://downloads.openwrt.org/snapshots/targets/rockchip/armv8/openwrt-sdk-rockchip-armv8_gcc-8.4.0_musl.Linux-x86_64.tar.xz
+          tar -xJf openwrt-sdk-rockchip-armv8_gcc-8.4.0_musl.Linux-x86_64.tar.xz
+          cd openwrt-sdk-rockchip-armv8_gcc-8.4.0_musl.Linux-x86_64/package
+          git clone https://github.com/excelwang/openwrt-openfortivpn openfortivpn
+          cd ..
+          ./scripts/feeds update base
+          ./scripts/feeds install libopenssl resolveip ppp
+          make package/openfortivpn/compile V=
